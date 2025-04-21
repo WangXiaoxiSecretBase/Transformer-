@@ -3,7 +3,26 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import os
+from torch.nn.utils.rnn import pad_sequence
 from transformer import Transformer, MathDataset, build_vocab, generate_math_data, train, evaluate, predict_math
+
+# 自定义整理函数来处理不同长度的序列
+def collate_fn(batch):
+    # 提取每个样本的src, tgt 和 tgt_y
+    src = [item['src'] for item in batch]
+    tgt = [item['tgt'] for item in batch]
+    tgt_y = [item['tgt_y'] for item in batch]
+    
+    # 填充为相同长度
+    src_padded = pad_sequence(src, batch_first=True, padding_value=0)
+    tgt_padded = pad_sequence(tgt, batch_first=True, padding_value=0)
+    tgt_y_padded = pad_sequence(tgt_y, batch_first=True, padding_value=0)
+    
+    return {
+        'src': src_padded,
+        'tgt': tgt_padded,
+        'tgt_y': tgt_y_padded
+    }
 
 def train_math_model(data_path, model_save_path, device='cuda' if torch.cuda.is_available() else 'cpu'):
     # 生成数学数据
@@ -22,8 +41,9 @@ def train_math_model(data_path, model_save_path, device='cuda' if torch.cuda.is_
     test_size = len(dataset) - train_size
     train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
     
-    train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=32)
+    # 使用自定义整理函数
+    train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
+    test_dataloader = DataLoader(test_dataset, batch_size=32, collate_fn=collate_fn)
     
     # 创建模型
     model = Transformer(
