@@ -73,6 +73,7 @@ python main.py --task poetry --mode predict --input "春日和风"
 - `train_math.py`: 数学模型的训练和预测代码
 - `train_poetry.py`: 唐诗模型的训练和生成代码
 - `main.py`: 命令行入口程序
+- `prepare_data.py`: 用于下载和处理中国古典诗词数据集的脚本
 
 ## 示例
 
