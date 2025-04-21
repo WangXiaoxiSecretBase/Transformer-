@@ -2,6 +2,7 @@ import argparse
 import os
 from train_math import train_math_model, solve_math_problem
 from train_poetry import train_poetry_model, generate_poetry
+import torch
 
 def main():
     parser = argparse.ArgumentParser(description="Transformer模型训练和预测程序")
@@ -19,11 +20,15 @@ def main():
     math_model_path = args.model if args.model else "math_model.pt"
     poetry_model_path = args.model if args.model else "poetry_model.pt"
     
+    # 设置设备
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f"使用设备: {device}")
+    
     # 数学任务
     if args.task == 'math':
         if args.mode == 'train':
             print("开始训练数学模型...")
-            train_math_model(None, math_model_path)
+            train_math_model(None, math_model_path, device)
         elif args.mode == 'predict':
             if not args.input:
                 print("错误: 预测模式需要提供输入方程，使用 --input 参数")
@@ -35,7 +40,7 @@ def main():
                 
             equation = args.input
             print(f"求解方程: {equation}")
-            result = solve_math_problem(math_model_path, equation)
+            result = solve_math_problem(math_model_path, equation, device)
             print(f"预测结果: {result}")
             print(f"实际结果: {eval(equation)}")
     
@@ -48,7 +53,7 @@ def main():
                 return
                 
             print("开始训练唐诗模型...")
-            train_poetry_model(data_path, poetry_model_path)
+            train_poetry_model(data_path, poetry_model_path, device)
         elif args.mode == 'predict':
             if not args.input:
                 print("错误: 预测模式需要提供输入提示，使用 --input 参数")
@@ -60,7 +65,7 @@ def main():
                 
             prompt = args.input
             print(f"生成唐诗，提示: {prompt}")
-            poem = generate_poetry(poetry_model_path, prompt)
+            poem = generate_poetry(poetry_model_path, prompt, device=device)
             print("生成的诗:")
             print(poem)
 
