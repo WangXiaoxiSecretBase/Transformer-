@@ -5,7 +5,23 @@ from torch.utils.data import DataLoader
 import numpy as np
 import json
 import os
+from torch.nn.utils.rnn import pad_sequence
 from transformer import DecoderOnlyTransformer, TextDataset, build_vocab, train, evaluate, generate_text
+
+# 自定义整理函数来处理不同长度的序列
+def collate_fn(batch):
+    # 提取每个样本的input和target
+    inputs = [item['input'] for item in batch]
+    targets = [item['target'] for item in batch]
+    
+    # 填充为相同长度
+    inputs_padded = pad_sequence(inputs, batch_first=True, padding_value=0)
+    targets_padded = pad_sequence(targets, batch_first=True, padding_value=0)
+    
+    return {
+        'input': inputs_padded,
+        'target': targets_padded
+    }
 
 def load_poetry_data(file_path, max_poems=None):
     """加载唐诗数据"""
@@ -38,7 +54,7 @@ def train_poetry_model(data_path, model_save_path, device='cuda' if torch.cuda.i
     
     # 创建数据集和数据加载器
     dataset = TextDataset(poems, vocab, seq_len=128)
-    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
     
     # 创建模型
     model = DecoderOnlyTransformer(
